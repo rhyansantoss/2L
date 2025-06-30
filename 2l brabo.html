@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Quem o 2L vai pegar hoje?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #111;
+      color: #fff;
+    }
+
+    h1 {
+      margin-top: 30px;
+    }
+
+    /* A SETA INDICADORA AGORA FICA NO TOPO DO CONTÊINER */
+    .wheel-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 40px auto;
+    }
+    
+    /* NOVO: Adicionamos um triângulo fixo no topo para ser o ponteiro */
+    .wheel-container::before {
+      content: '';
+      position: absolute;
+      top: -10px; /* Posiciona um pouco acima da borda da roleta */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid white; /* Triângulo apontando para baixo */
+      z-index: 2;
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 10px solid #fff;
+      position: relative;
+      overflow: hidden;
+      transform: rotate(0deg);
+      transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1); /* Transição mais suave */
+    }
+
+    .segment {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      left: 50%;
+      top: 50%;
+      transform-origin: 0% 0%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .segment span {
+      transform: rotate(-45deg);
+      white-space: nowrap;
+    }
+
+    .seg0 { background: #e74c3c; transform: rotate(0deg); }
+    .seg1 { background: #3498db; transform: rotate(90deg); }
+    .seg2 { background: #2ecc71; transform: rotate(180deg); }
+    .seg3 { background: #f1c40f; transform: rotate(270deg); color: #111; }
+    
+    /* O destaque agora é um brilho mais sutil, pois já temos a seta */
+    .highlight {
+      box-shadow: 0 0 20px 10px #ffffffaa;
+    }
+
+    button {
+      margin-top: 40px; /* Mais espaço por causa da seta no topo */
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 5px;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #0f0;
+      height: 30px; /* Altura fixa para evitar pulos no layout */
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Quem o 2L vai pegar hoje?</h1>
+
+  <div class="wheel-container">
+    <div class="wheel" id="wheel">
+      <div class="segment seg0" id="seg0"><span>Ex</span></div>
+      <div class="segment seg1" id="seg1"><span>Narjara</span></div>
+      <div class="segment seg2" id="seg2"><span>Sandra</span></div>
+      <div class="segment seg3" id="seg3"><span>Argentina</span></div>
+    </div>
+  </div>
+
+  <button id="spinButton" onclick="spin()">Girar</button>
+  <div id="result"></div>
+
+  <audio id="spinSound" src="roleta.mp3" preload="auto"></audio>
+
+  <script>
+    const wheel = document.getElementById("wheel");
+    const result = document.getElementById("result");
+    const spinButton = document.getElementById("spinButton");
+    const spinSound = document.getElementById("spinSound");
+    const options = ["Ex", "Narjara", "Sandra", "Argentina"];
+    
+    // Rastreia o ângulo atual para que os giros sejam cumulativos
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    function spin() {
+      if (isSpinning) return;
+      isSpinning = true;
+
+      // Limpa resultado e brilho anteriores
+      result.textContent = "";
+      document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('highlight'));
+      
+      spinButton.disabled = true; // Desabilita o botão durante o giro
+
+      // Sorteia o item vencedor
+      const randomIndex = Math.floor(Math.random() * options.length);
+      const segmentAngle = 360 / options.length;
+
+      // O ponteiro agora está no topo (270 graus no sistema de coordenadas do CSS)
+      const pointerAngle = 270;
+      
+      // Calcula o ângulo do meio do segmento vencedor
+      const winningSegmentMiddle = (randomIndex * segmentAngle) + (segmentAngle / 2);
+      
+      // Calcula a rotação necessária para alinhar o segmento vencedor com o ponteiro
+      // Adiciona voltas extras para o efeito de giro
+      const randomSpins = 5 + Math.random() * 3; // Entre 5 e 8 voltas
+      const degreesToRotate = (randomSpins * 360) + pointerAngle - winningSegmentMiddle;
+      
+      // Aplica a rotação cumulativa
+      currentRotation += degreesToRotate;
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+      // Toca o som (se existir)
+      if (spinSound) {
+        spinSound.currentTime = 0;
+        spinSound.play();
+      }
+
+      // Define o resultado após a animação terminar (5 segundos)
+      setTimeout(() => {
+        document.getElementById(`seg${randomIndex}`).classList.add("highlight");
+        result.textContent = `Hoje o 2L vai pegar: ${options[randomIndex]}!`;
+        isSpinning = false;
+        spinButton.disabled = false; // Habilita o botão novamente
+      }, 5000); // Deve corresponder ao tempo da transição no CSS
+    }
+  </script>
+
+</body>
+</html>
